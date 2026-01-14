@@ -8,14 +8,35 @@ using static System.Net.WebRequestMethods;
 
 namespace FileDowloader.Request
 {
-    public class Request
+    public class Requestt
     {
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<Request> _logger;
-        public Request(IHttpClientFactory clientFactory, ILogger<Request> logger)
+        private readonly ILogger<Requestt> _logger;
+        private SemaphoreSlim _semaphor = new SemaphoreSlim(2,2);
+
+
+        public Requestt(IHttpClientFactory clientFactory, ILogger<Requestt> logger)
         {
             _httpClientFactory = clientFactory;
             _logger = logger;
+        }
+
+        public async Task Semaphore(string url, CancellationToken cancellationToken = default)
+        { 
+            await _semaphor.WaitAsync(cancellationToken);
+
+            try
+            {
+                await HttpRequest(url, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Возинкло исключение", ex.Message);
+            }
+            finally
+            { 
+                _semaphor.Release();
+            }
         }
 
         public async Task<bool> HttpRequest(string url, CancellationToken cancellationToken = default)
