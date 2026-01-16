@@ -43,8 +43,12 @@ namespace FileDowloader.Request
         {
             try
             {
+                _logger.LogInformation("Выполняю запрос...");
                 var client = _httpClientFactory.CreateClient("httpclient");
-                var path = "";
+
+                var fileName = Path.GetFileName(url) ?? $"file_{Guid.NewGuid()}.download";
+                var downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                var fullPath = Path.Combine(downloadsPath, "Downloads", fileName);
 
                 try
                 {
@@ -53,13 +57,15 @@ namespace FileDowloader.Request
                     _logger.LogInformation("Запрос завершен. StatusCode: {StatusCode}", response.StatusCode);
                     if (response.IsSuccessStatusCode)
                     {
+                        _logger.LogInformation("Скачиваю и сохраняю...");
                         byte[] content = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
 
                         if (content != null)
                         {
-                            using (FileStream file = System.IO.File.Create(path))
+                            using (FileStream file = System.IO.File.Create(fullPath))
                             { 
                                 file.Write(content, 0, content.Length);
+                                _logger.LogInformation("Успешно сохранено");
                                 return true;
                             }
                         }
